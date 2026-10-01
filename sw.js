@@ -1,6 +1,6 @@
 // Офлайн-работа: приложение сохраняется на телефоне и открывается без интернета.
 // При обновлении файлов на сайте увеличьте номер версии ниже.
-const VERSION = 'finance-v3';
+const VERSION = 'finance-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon-v2.png', './icon-192-v2.png', './icon-512-v2.png'];
 
 self.addEventListener('install', e => {

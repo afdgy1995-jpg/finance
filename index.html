@@ -12,8 +12,8 @@
 <meta name="theme-color" content="#2B1D1C" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon-v2.png">
+<link rel="icon" href="icon-192-v2.png" type="image/png">
 <style>
 :root{
   --bg:#FEDBC5; --surface:#FFF3EB; --ink:#4A2622; --muted:#85544A; --line:#F0B8A2; --soft:#F8C6AF;
@@ -340,13 +340,30 @@ dialog::backdrop{background:rgba(70,30,25,.45)}
     </div>
     <div class="set-group">
       <h4>Распознавание чеков</h4>
-      <p class="set-note">Фото чека отправляется в Claude по вашему ключу API. Ключ хранится только на этом устройстве.</p>
-      <div class="set-field"><label for="apiKey">Ключ API</label><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…"></div>
-      <div class="set-field"><label for="apiModel">Модель</label>
-        <select id="apiModel">
-          <option value="claude-sonnet-5-5">Точная: Claude Sonnet 5.5</option>
-          <option value="claude-haiku-4-5-20251001">Быстрая и дешевле: Claude Haiku 4.5</option>
+      <p class="set-note">Фото чека отправляется в выбранную нейросеть по вашему ключу. Ключи хранятся только на этом устройстве.</p>
+      <div class="set-field"><label for="apiProvider">Нейросеть</label>
+        <select id="apiProvider">
+          <option value="gemini">Gemini — бесплатно</option>
+          <option value="claude">Claude — платно</option>
         </select></div>
+      <div id="gemFields">
+        <div class="set-field"><label for="gemKey">Ключ Gemini</label><input id="gemKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIza…"></div>
+        <div class="set-field"><label for="gemModel">Модель</label>
+          <select id="gemModel">
+            <option value="gemini-flash-latest">Gemini Flash — точнее</option>
+            <option value="gemini-flash-lite-latest">Gemini Flash-Lite — больше запросов</option>
+          </select></div>
+        <p class="set-note">Ключ бесплатно выдаётся на сайте aistudio.google.com в разделе API keys. На бесплатном тарифе Google может использовать запросы для улучшения своих моделей.</p>
+      </div>
+      <div id="cldFields" hidden>
+        <div class="set-field"><label for="cldKey">Ключ Claude</label><input id="cldKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…"></div>
+        <div class="set-field"><label for="cldModel">Модель</label>
+          <select id="cldModel">
+            <option value="claude-sonnet-5-5">Claude Sonnet 5.5 — точнее</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — дешевле</option>
+          </select></div>
+        <p class="set-note">Ключ создаётся на сайте platform.claude.com, баланс пополняется там же.</p>
+      </div>
       <button type="button" class="btn small" id="apiTest">Проверить ключ</button>
       <p class="set-note" id="apiTestRes" style="margin-top:8px"></p>
     </div>
@@ -682,11 +699,12 @@ function renderSettings(){
 }
 function openSettings(focusApi){
   draft = clone(S.settings); $('#setErr').textContent=''; renderSettings();
-  $('#apiKey').value = S.api.key || ''; $('#apiModel').value = S.api.model || 'claude-sonnet-5-5';
+  $('#apiProvider').value = S.api.provider; $('#gemKey').value = S.api.geminiKey || ''; $('#gemModel').value = S.api.geminiModel;
+  $('#cldKey').value = S.api.claudeKey || ''; $('#cldModel').value = S.api.claudeModel; syncProviderFields();
   $('#apiTestRes').textContent = ''; restoreArmed = false; $('#restoreBtn').classList.remove('armed'); $('#restoreBtn').textContent='Восстановить из копии';
   renderBackupNote();
   setDlg.showModal();
-  if(focusApi===true){ setTimeout(()=>{ $('#apiKey').scrollIntoView({block:'center'}); $('#apiKey').focus(); },60); }
+  if(focusApi===true){ setTimeout(()=>{ const k=$(S.api.provider==='claude'?'#cldKey':'#gemKey'); k.scrollIntoView({block:'center'}); k.focus(); },60); }
 }
 $('#setDlg').addEventListener('input', e=>{
   const row = e.target.closest('.set-row'); if(!row) return;
@@ -727,7 +745,7 @@ $('#setSave').addEventListener('click', ()=>{
   }
   if(!draft.accounts.length){ err.textContent='Нужен хотя бы один счёт.'; return; }
   putSettings(draft);
-  S.api = { key: $('#apiKey').value.trim(), model: $('#apiModel').value };
+  S.api = formApi();
   persist('api', S.api);
   setDlg.close(); toast('Настройки сохранены');
 });
@@ -826,7 +844,7 @@ const rcDlg = $('#rcDlg'), rcBody = $('#rcBody');
 const MAX_PHOTOS = 4;
 
 $('#rcBtn').addEventListener('click', ()=>{
-  if(!S.api.key){ openSettings(true); toast('Добавьте ключ API, чтобы распознавать чеки'); return; }
+  if(!activeCfg(S.api).key){ openSettings(true); toast('Добавьте ключ нейросети, чтобы распознавать чеки'); return; }
   if(!S.settings.expense.length){ toast('Сначала добавьте статьи расходов в настройках.'); return; }
   $('#rcFile').click();
 });
@@ -857,36 +875,103 @@ async function prepareImage(file){
   return { b64: dataUrl.split(',')[1], thumb: dataUrl };
 }
 
-function apiError(status, body){
+function syncProviderFields(){
+  const g = $('#apiProvider').value==='gemini';
+  $('#gemFields').hidden = !g; $('#cldFields').hidden = g; $('#apiTestRes').textContent='';
+}
+$('#apiProvider').addEventListener('change', syncProviderFields);
+function formApi(){
+  return { provider: $('#apiProvider').value,
+    geminiKey: $('#gemKey').value.trim(), geminiModel: $('#gemModel').value,
+    claudeKey: $('#cldKey').value.trim(), claudeModel: $('#cldModel').value };
+}
+function activeCfg(api){
+  return api.provider==='claude'
+    ? { provider:'claude', key: api.claudeKey, model: api.claudeModel || 'claude-sonnet-5-5' }
+    : { provider:'gemini', key: api.geminiKey, model: api.geminiModel || 'gemini-flash-latest' };
+}
+async function netFetch(url, opts){
+  try{ return await fetch(url, opts); }
+  catch(e){ if(e && e.name==='AbortError') throw e; throw new Error('Нет связи с сервисом. Проверьте интернет.'); }
+}
+
+/* Claude */
+function claudeError(status, body){
   const msg = (body && body.error && body.error.message) || '';
-  if(status===401 || status===403) return 'Ключ API не подходит. Проверьте его в настройках.';
-  if(status===400 && /credit|balance/i.test(msg)) return 'На балансе API закончились деньги. Пополните его в консоли Claude.';
-  if(status===404 || (status===400 && /model/i.test(msg))) return 'Выбранная модель недоступна для этого ключа. Попробуйте другую в настройках.';
+  if(status===401 || status===403) return 'Ключ Claude не подходит. Проверьте его в настройках.';
+  if(status===400 && /credit|balance/i.test(msg)) return 'На балансе Claude закончились деньги. Пополните его на platform.claude.com.';
+  if(status===404 || (status===400 && /model/i.test(msg))) return 'Выбранная модель Claude недоступна. Попробуйте другую в настройках.';
   if(status===429) return 'Слишком много запросов. Попробуйте через минуту.';
   if(status===413) return 'Фото слишком большое. Попробуйте снять заново.';
   if(status>=500) return 'Сервис Claude сейчас перегружен. Попробуйте чуть позже.';
   return 'Не удалось разобрать чек' + (msg ? `: ${msg}` : '.');
 }
-async function callClaude(content, signal, maxTokens){
-  let res;
-  try{
-    res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', signal,
-      headers:{
-        'content-type':'application/json',
-        'x-api-key': S.api.key,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body: JSON.stringify({ model: S.api.model || 'claude-sonnet-5-5', max_tokens: maxTokens||8000, messages:[{role:'user', content}] })
-    });
-  }catch(e){
-    if(e && e.name==='AbortError') throw e;
-    throw new Error('Нет связи с сервисом. Проверьте интернет.');
-  }
-  let body = null; try{ body = await res.json(); }catch(e){}
-  if(!res.ok) throw new Error(apiError(res.status, body));
+async function askClaude(cfg, images, prompt, signal, maxTokens){
+  const content = images.map(b64=>({type:'image', source:{type:'base64', media_type:'image/jpeg', data:b64}}));
+  content.push({type:'text', text:prompt});
+  const res = await netFetch('https://api.anthropic.com/v1/messages', {
+    method:'POST', signal,
+    headers:{ 'content-type':'application/json', 'x-api-key':cfg.key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+    body: JSON.stringify({ model: cfg.model, max_tokens: maxTokens||8000, messages:[{role:'user', content}] })
+  });
+  let body=null; try{ body = await res.json(); }catch(e){}
+  if(!res.ok) throw new Error(claudeError(res.status, body));
   return (body && Array.isArray(body.content) ? body.content : []).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+}
+
+/* Gemini */
+const GEMINI_FALLBACK = ['gemini-flash-latest','gemini-flash-lite-latest','gemini-2.5-flash'];
+async function geminiOnce(key, model, images, prompt, signal, maxTokens, json){
+  const parts = images.map(b64=>({inline_data:{mime_type:'image/jpeg', data:b64}}));
+  parts.push({text: prompt});
+  const cfgGen = { maxOutputTokens: maxTokens||8192 };
+  if(json) cfgGen.responseMimeType = 'application/json';
+  const res = await netFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+    method:'POST', signal,
+    headers:{ 'content-type':'application/json', 'x-goog-api-key': key },
+    body: JSON.stringify({ contents:[{role:'user', parts}], generationConfig: cfgGen })
+  });
+  let body=null; try{ body = await res.json(); }catch(e){}
+  if(!res.ok){
+    const msg = (body && body.error && (body.error.message||'')) || '';
+    const err = new Error(''); err.status = res.status; err.msg = msg; throw err;
+  }
+  const cand = body && body.candidates && body.candidates[0];
+  if(!cand){
+    const why = body && body.promptFeedback && body.promptFeedback.blockReason;
+    throw new Error(why ? 'Google отказался обрабатывать это фото. Попробуйте другое.' : 'Пустой ответ от Gemini. Попробуйте ещё раз.');
+  }
+  return ((cand.content && cand.content.parts) || []).filter(p=>p.text && !p.thought).map(p=>p.text).join('\n');
+}
+function geminiError(e){
+  const m = e.msg || '';
+  if(/API key not valid|API_KEY_INVALID|invalid api key/i.test(m) || e.status===401) return 'Ключ Gemini не подходит. Проверьте, что он скопирован целиком.';
+  if(/location is not supported|not available in your country|region/i.test(m)) return 'Google не даёт доступ к Gemini API из вашей страны.';
+  if(e.status===403) return 'У ключа Gemini нет доступа. Создайте новый ключ на aistudio.google.com.';
+  if(e.status===429) return 'Бесплатный лимит запросов Gemini на сейчас исчерпан. Попробуйте через минуту, а если не поможет, то завтра.';
+  if(e.status>=500) return 'Сервис Gemini сейчас перегружен. Попробуйте чуть позже.';
+  return 'Не удалось разобрать чек' + (m ? `: ${m}` : '.');
+}
+async function askGemini(cfg, images, prompt, signal, maxTokens, json){
+  const order = [cfg.model, ...GEMINI_FALLBACK.filter(m=>m!==cfg.model)];
+  let last;
+  for(const model of order){
+    try{ return await geminiOnce(cfg.key, model, images, prompt, signal, maxTokens, json); }
+    catch(e){
+      if(e && e.name==='AbortError') throw e;
+      if(!('status' in e)) throw e;
+      last = e;
+      const tryNext = e.status===404 || e.status>=500 || (e.status===429 && /limit:\s*0|free_tier/i.test(e.msg||'')) || (e.status===400 && /model/i.test(e.msg||'') && !/API key/i.test(e.msg||''));
+      if(!tryNext) break;
+    }
+  }
+  throw new Error(geminiError(last));
+}
+
+async function askAI(cfg, images, prompt, signal, opts){
+  opts = opts || {};
+  if(cfg.provider==='claude') return askClaude(cfg, images, prompt, signal, opts.maxTokens);
+  return askGemini(cfg, images, prompt, signal, opts.maxTokens, opts.json);
 }
 function parseJsonLoose(text){
   const t = String(text||'').replace(/```(?:json)?/gi,'').trim();
@@ -897,13 +982,11 @@ function parseJsonLoose(text){
 }
 
 $('#apiTest').addEventListener('click', async ()=>{
-  const out = $('#apiTestRes'); const key = $('#apiKey').value.trim();
-  if(!key){ out.textContent = 'Вставьте ключ.'; return; }
-  const prev = S.api; S.api = { key, model: $('#apiModel').value };
+  const out = $('#apiTestRes'); const cfg = activeCfg(formApi());
+  if(!cfg.key){ out.textContent = 'Вставьте ключ.'; return; }
   out.textContent = 'Проверяю…';
-  try{ await callClaude([{type:'text',text:'Ответь одним словом: ок'}], undefined, 64); out.innerHTML = '<span class="ok-note">Ключ работает.</span>'; }
+  try{ await askAI(cfg, [], 'Ответь одним словом: ок', undefined, {maxTokens:256}); out.innerHTML = '<span class="ok-note">Ключ работает.</span>'; }
   catch(e){ out.textContent = e.message; }
-  finally{ S.api = prev; }
 });
 
 async function scanReceipt(files){
@@ -947,12 +1030,10 @@ ${cats}
 Ответь только JSON, без пояснений, такого вида:
 {"store":"…","date":"2026-01-31","total":1250.5,"items":[{"name":"…","amount":890,"cat":"${S.settings.expense[0].id}"}]}`;
 
-  const content = imgs.map(im=>({type:'image', source:{type:'base64', media_type:'image/jpeg', data:im.b64}}));
-  content.push({type:'text', text:prompt});
 
   let r;
   try{
-    const text = await callClaude(content, ctl.signal);
+    const text = await askAI(activeCfg(S.api), imgs.map(im=>im.b64), prompt, ctl.signal, {json:true});
     if(ctl.signal.aborted) return;
     r = parseJsonLoose(text);
     if(!r) throw new Error('Ответ не похож на разбор чека. Попробуйте ещё раз.');
@@ -1164,16 +1245,19 @@ let toastT=null;
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
 
 /* ---------- boot ---------- */
-S.api = { key:'', model:'claude-sonnet-5-5' };
+S.api = { provider:'gemini', geminiKey:'', geminiModel:'gemini-flash-latest', claudeKey:'', claudeModel:'claude-sonnet-5-5' };
 S.lastBackup = null;
 render();
 (async function boot(){
   try{ await store.open(); }catch(e){ /* falls back to localStorage */ }
   try{
-    const [settings, months, api, lastBackup] = await Promise.all([store.get('settings'), store.get('months'), store.get('api'), store.get('lastBackup')]);
+    let [settings, months, api, lastBackup] = await Promise.all([store.get('settings'), store.get('months'), store.get('api'), store.get('lastBackup')]);
     if(settings && Array.isArray(settings.accounts)) S.settings = settings;
     if(months && typeof months==='object') S.months = months;
-    if(api && typeof api==='object') S.api = Object.assign(S.api, api);
+    if(api && typeof api==='object'){
+      if('key' in api && !('claudeKey' in api)){ api = { provider: api.key ? 'claude' : 'gemini', claudeKey: api.key||'', claudeModel: api.model||'claude-sonnet-5-5' }; }
+      S.api = Object.assign(S.api, api);
+    }
     if(lastBackup) S.lastBackup = lastBackup;
   }catch(e){ toast('Не удалось прочитать данные на устройстве.'); }
   S.mode = 'ready';
