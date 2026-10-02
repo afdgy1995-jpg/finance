@@ -1,7 +1,7 @@
 // Офлайн-работа: приложение сохраняется на телефоне и открывается без интернета.
 // При обновлении файлов на сайте увеличьте номер версии ниже.
-const VERSION = 'finance-v4';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon-v2.png', './icon-192-v2.png', './icon-512-v2.png'];
+const VERSION = 'finance-v9';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './gilroy-400.woff', './gilroy-500.woff', './gilroy-600.woff', './caviar-400.woff', './caviar-700.woff'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

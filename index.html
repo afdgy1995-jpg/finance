@@ -8,17 +8,22 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Финансы">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#FEDBC5" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#2B1D1C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#E0E0D4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#272A2A" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="apple-touch-icon-v2.png">
-<link rel="icon" href="icon-192-v2.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png" type="image/png">
 <style>
+@font-face{font-family:"Gilroy";src:url("gilroy-400.woff") format("woff");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Gilroy";src:url("gilroy-500.woff") format("woff");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Gilroy";src:url("gilroy-600.woff") format("woff");font-weight:600 700;font-style:normal;font-display:swap}
+@font-face{font-family:"Caviar Dreams";src:url("caviar-400.woff") format("woff");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Caviar Dreams";src:url("caviar-700.woff") format("woff");font-weight:700;font-style:normal;font-display:swap}
 :root{
-  --bg:#FEDBC5; --surface:#FFF3EB; --ink:#4A2622; --muted:#85544A; --line:#F0B8A2; --soft:#F8C6AF;
-  --income:#266B4F; --expense:#B33233; --transfer:#8C540D; --focus:#B23A48;
-  --btn:#F7877F; --btn-ink:#4A2622;
+  --bg:#E0E0D4; --surface:#F2F2EA; --ink:#272A2A; --muted:#5C5E57; --line:#C9C9BB; --soft:#D2D2C4;
+  --income:#5E620A; --expense:#A83D50; --transfer:#3F5A66; --focus:#272A2A;
+  --btn:#F295A0; --btn-ink:#272A2A;
   color-scheme:light;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
@@ -26,20 +31,20 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#2B1D1C; --surface:#3A2826; --ink:#FCE6DA; --muted:#CBA79B; --line:#4E3633; --soft:#45302E;
-    --income:#7FD0AA; --expense:#FF9C94; --transfer:#E9B66A; --focus:#FFB8A3;
-    --btn:#F7877F; --btn-ink:#2B1D1C; color-scheme:dark;
+    --bg:#272A2A; --surface:#313535; --ink:#E0E0D4; --muted:#ADADA0; --line:#404545; --soft:#3A3F3F;
+    --income:#C2C64A; --expense:#F295A0; --transfer:#A9C3CC; --focus:#F295A0;
+    --btn:#F295A0; --btn-ink:#272A2A; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#2B1D1C; --surface:#3A2826; --ink:#FCE6DA; --muted:#CBA79B; --line:#4E3633; --soft:#45302E;
-  --income:#7FD0AA; --expense:#FF9C94; --transfer:#E9B66A; --focus:#FFB8A3;
-  --btn:#F7877F; --btn-ink:#2B1D1C; color-scheme:dark;
+  --bg:#272A2A; --surface:#313535; --ink:#E0E0D4; --muted:#ADADA0; --line:#404545; --soft:#3A3F3F;
+  --income:#C2C64A; --expense:#F295A0; --transfer:#A9C3CC; --focus:#F295A0;
+  --btn:#F295A0; --btn-ink:#272A2A; color-scheme:dark;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;background:var(--bg);color:var(--ink);
-  font-family:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+  font-family:"Gilroy",-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",Roboto,Arial,sans-serif;
   font-size:16px;line-height:1.45;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -49,7 +54,8 @@ button{cursor:pointer}
 .app{max-width:1120px;margin:0 auto;padding:20px 16px 132px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .month-nav{display:flex;align-items:center;gap:2px;min-width:0}
-.month-nav h1{margin:0 6px;font-size:clamp(26px,5vw,34px);font-weight:700;letter-spacing:-.015em;line-height:1.1;white-space:nowrap}
+.disp{font-family:"Caviar Dreams","Gilroy",-apple-system,system-ui,sans-serif}
+.month-nav h1{margin:0 6px;font-family:"Caviar Dreams","Gilroy",-apple-system,system-ui,sans-serif;font-size:clamp(28px,5.4vw,36px);font-weight:700;letter-spacing:.005em;line-height:1.1;white-space:nowrap}
 .month-nav h1 span{color:var(--muted);font-weight:500}
 .icon-btn{border:0;background:transparent;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--ink)}
 .icon-btn:hover{background:var(--soft)}
@@ -63,7 +69,7 @@ button{cursor:pointer}
 }
 
 .net-label{color:var(--muted);font-size:15px}
-.net{font-size:clamp(40px,9vw,52px);font-weight:700;letter-spacing:-.025em;line-height:1.05;margin:2px 0 18px}
+.net{font-family:"Caviar Dreams","Gilroy",-apple-system,system-ui,sans-serif;font-size:clamp(42px,9.5vw,56px);font-weight:700;letter-spacing:-.01em;line-height:1.05;margin:2px 0 18px}
 .net.pos{color:var(--income)} .net.neg{color:var(--expense)}
 
 .flow{display:grid;gap:14px}
@@ -76,7 +82,7 @@ button{cursor:pointer}
 
 .section{margin-top:30px}
 .section-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
-.section-head h2{margin:0;font-size:19px;font-weight:600}
+.section-head h2{margin:0;font-family:"Caviar Dreams","Gilroy",sans-serif;font-size:21px;font-weight:700}
 .seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:3px}
 .seg button{border:0;background:transparent;padding:5px 12px;border-radius:999px;font-size:14px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:500}
@@ -96,7 +102,7 @@ button{cursor:pointer}
 .hint{color:var(--muted);font-size:13px;margin:6px 6px 0}
 
 .ops-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
-.ops-head h2{margin:0;font-size:22px;font-weight:600}
+.ops-head h2{margin:0;font-family:"Caviar Dreams","Gilroy",sans-serif;font-size:24px;font-weight:700}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{border:1px solid var(--line);background:transparent;padding:5px 12px;border-radius:999px;font-size:14px}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -112,12 +118,12 @@ button{cursor:pointer}
 .op .dot.transfer{background:transparent;border:2px solid var(--transfer)}
 
 .blank{padding:36px 6px;color:var(--muted)}
-.blank b{display:block;color:var(--ink);font-size:18px;margin-bottom:4px;font-weight:600}
+.blank b{display:block;color:var(--ink);font-family:"Caviar Dreams","Gilroy",sans-serif;font-size:20px;margin-bottom:4px;font-weight:700}
 
 .fab-wrap{position:fixed;left:0;right:0;bottom:0;padding:0 16px calc(18px + env(safe-area-inset-bottom,0px));pointer-events:none}
 .fab-inner{max-width:1088px;margin:0 auto;display:flex;justify-content:flex-end;gap:10px}
-.fab.secondary{background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 6px 20px rgba(150,60,45,.16)}
-.fab{pointer-events:auto;border:0;font-size:17px!important;background:var(--btn);color:var(--btn-ink);font-weight:600;font-size:16px;padding:15px 24px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;box-shadow:0 6px 20px rgba(150,60,45,.28)}
+.fab.secondary{background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 6px 20px rgba(39,42,42,.14)}
+.fab{pointer-events:auto;border:0;font-size:17px!important;background:var(--btn);color:var(--btn-ink);font-weight:600;font-size:16px;padding:15px 24px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;box-shadow:0 6px 20px rgba(39,42,42,.28)}
 .fab svg{width:20px;height:20px}
 .fab{white-space:nowrap}
 .fab .narrow{display:none}
@@ -127,12 +133,12 @@ button{cursor:pointer}
 
 /* dialogs */
 dialog{border:0;padding:0;border-radius:18px;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 40px);background:var(--surface);color:var(--ink);overflow:auto}
-dialog::backdrop{background:rgba(70,30,25,.45)}
+dialog::backdrop{background:rgba(39,42,42,.5)}
 @media (max-width:600px){
   dialog{margin:auto 0 0;width:100%;max-width:100%;border-radius:18px 18px 0 0;max-height:92vh;padding-bottom:env(safe-area-inset-bottom,0px)}
 }
 .dlg{padding:20px 20px 18px}
-.dlg h3{margin:0 0 14px;font-size:21px;font-weight:600}
+.dlg h3{margin:0 0 14px;font-family:"Caviar Dreams","Gilroy",sans-serif;font-size:23px;font-weight:700}
 .type-seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--soft);border-radius:12px;padding:4px;margin-bottom:16px}
 .type-seg button{border:0;background:transparent;padding:9px 6px;border-radius:9px;font-weight:500;color:var(--muted)}
 .type-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink)}
@@ -188,7 +194,7 @@ dialog::backdrop{background:rgba(70,30,25,.45)}
 .rc-wait{text-align:center;padding:8px 0 4px}
 .rc-thumbs{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
 .rc-thumbs img{height:140px;max-width:45%;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
-.rc-wait b{display:block;font-size:18px;font-weight:600}
+.rc-wait b{display:block;font-family:"Caviar Dreams","Gilroy",sans-serif;font-size:20px;font-weight:700}
 .rc-wait p{color:var(--muted);margin:4px 0 16px;font-size:15px}
 .pulse{animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.45}}
@@ -411,8 +417,8 @@ dialog::backdrop{background:rgba(70,30,25,.45)}
 
 /* ---------- constants & helpers ---------- */
 const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-const PALETTE = ['#F7877F','#E0A458','#B5677D','#6F9C8F','#D4504B','#8C7AB0','#C98B5E','#5E86A6','#E07A9B','#9AA55A','#A35F4F','#4E9C9C','#D9A0A0','#7A5C8E'];
-const INCOME_PALETTE = ['#2F7A5C','#55A383','#86C2A6','#3E8C8C','#7BAA6E','#A9D3BF'];
+const PALETTE = ['#F295A0','#989C14','#5C6363','#E46F80','#C2C64A','#8E9494','#F7B7BE','#7E8210','#C25A6A','#D1D46A','#4E5252','#E9A7AE','#A33E4E','#B5B93C'];
+const INCOME_PALETTE = ['#7E8210','#989C14','#B5B93C','#6B6E0E','#C2C64A','#D1D46A'];
 const DEFAULTS = {
   expense:[
     {id:'e1',name:'Продукты'},{id:'e2',name:'Кафе и рестораны'},{id:'e3',name:'Транспорт'},
