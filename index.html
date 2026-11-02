@@ -71,6 +71,11 @@ button{cursor:pointer}
 .net-label{color:var(--muted);font-size:15px}
 .net{font-family:"Caviar Dreams","Gilroy",-apple-system,system-ui,sans-serif;font-size:clamp(42px,9.5vw,56px);font-weight:700;letter-spacing:-.01em;line-height:1.05;margin:2px 0 18px}
 .net.pos{color:var(--income)} .net.neg{color:var(--expense)}
+.carry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:-4px 0 20px}
+.carry div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.carry span{display:block;color:var(--muted);font-size:13px;line-height:1.3}
+.carry b{display:block;font-weight:600;font-size:18px;margin-top:2px;white-space:nowrap}
+.carry b.neg{color:var(--expense)}
 
 .flow{display:grid;gap:14px}
 .flow-row .head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
@@ -233,6 +238,10 @@ dialog::backdrop{background:rgba(39,42,42,.5)}
     <aside class="side">
       <div class="net-label">Итог месяца</div>
       <div class="net" id="net">0 ₽</div>
+      <div class="carry">
+        <div><span id="carryLabel">С прошлого месяца</span><b id="carryStart">0 ₽</b></div>
+        <div><span id="carryEndLabel">Всего на конец месяца</span><b id="carryEnd">0 ₽</b></div>
+      </div>
       <div class="flow">
         <div class="flow-row">
           <div class="head"><b id="incTotal">0 ₽</b><span>доходы</span></div>
@@ -567,6 +576,22 @@ function render(){
   const orphan = Object.keys(bal).filter(k=>!S.settings.accounts.some(a=>a.id===k) && Math.abs(bal[k])>0.001);
   orphan.forEach(k=>accRows.push(`<div class="acc"><span>Без счёта</span><span>${money(bal[k])}</span></div>`));
   $('#accounts').innerHTML = accRows.join('');
+
+  // money carried over from previous months, and total at the end of this one
+  const startDate = S.ym + '-01';
+  let startTotal = S.settings.accounts.reduce((sum,a)=>sum+(Number(a.opening)||0),0);
+  for(const t of allTx()){
+    if(t.date>=startDate) continue;
+    if(t.type==='income') startTotal+=t.amount; else if(t.type==='expense') startTotal-=t.amount;
+  }
+  const endTotal = Object.values(bal).reduce((sum,v)=>sum+v,0);
+  const prevM = MONTHS[(m+10)%12].toLowerCase();
+  const prevMonthName = {январь:'января',февраль:'февраля',март:'марта',апрель:'апреля',май:'мая',июнь:'июня',июль:'июля',август:'августа',сентябрь:'сентября',октябрь:'октября',ноябрь:'ноября',декабрь:'декабря'}[prevM] || prevM;
+  $('#carryLabel').textContent = 'Остаток с ' + prevMonthName;
+  const cs=$('#carryStart'); cs.textContent = money(startTotal); cs.className = startTotal<0?'neg':'';
+  const isCurrent = S.ym===today().slice(0,7);
+  $('#carryEndLabel').textContent = isCurrent ? 'Всего сейчас' : 'Всего на конец месяца';
+  const ce=$('#carryEnd'); ce.textContent = money(endTotal); ce.className = endTotal<0?'neg':'';
 
   // chips
   const types=[['all','Все'],['income','Доходы'],['expense','Расходы'],['transfer','Переводы']];
