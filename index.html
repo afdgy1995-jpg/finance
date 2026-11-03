@@ -75,7 +75,7 @@ button{cursor:pointer}
 .carry div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .carry span{display:block;color:var(--muted);font-size:13px;line-height:1.3}
 .carry b{display:block;font-weight:600;font-size:18px;margin-top:2px;white-space:nowrap}
-.carry b.neg{color:var(--expense)}
+.carry b.neg{color:var(--expense)} .carry b.pos{color:var(--income)}
 
 .flow{display:grid;gap:14px}
 .flow-row .head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
@@ -236,11 +236,11 @@ dialog::backdrop{background:rgba(39,42,42,.5)}
 
   <div class="grid">
     <aside class="side">
-      <div class="net-label">Итог месяца</div>
+      <div class="net-label" id="netLabel">Всего сейчас</div>
       <div class="net" id="net">0 ₽</div>
       <div class="carry">
         <div><span id="carryLabel">С прошлого месяца</span><b id="carryStart">0 ₽</b></div>
-        <div><span id="carryEndLabel">Всего на конец месяца</span><b id="carryEnd">0 ₽</b></div>
+        <div><span id="monthNetLabel">Итог месяца</span><b id="monthNet">0 ₽</b></div>
       </div>
       <div class="flow">
         <div class="flow-row">
@@ -539,8 +539,7 @@ function render(){
     else if(t.type==='expense'){ exp+=t.amount; byExp[t.cat]=(byExp[t.cat]||0)+t.amount; }
   }
   const net = inc-exp;
-  const netEl = $('#net'); netEl.textContent = signed(net);
-  netEl.className = 'net' + (net>0?' pos':net<0?' neg':'');
+  const netEl = $('#net');
   $('#incTotal').textContent = money(inc);
   $('#expTotal').textContent = money(exp);
 
@@ -590,8 +589,12 @@ function render(){
   $('#carryLabel').textContent = 'Остаток с ' + prevMonthName;
   const cs=$('#carryStart'); cs.textContent = money(startTotal); cs.className = startTotal<0?'neg':'';
   const isCurrent = S.ym===today().slice(0,7);
-  $('#carryEndLabel').textContent = isCurrent ? 'Всего сейчас' : 'Всего на конец месяца';
-  const ce=$('#carryEnd'); ce.textContent = money(endTotal); ce.className = endTotal<0?'neg':'';
+  $('#netLabel').textContent = isCurrent ? 'Всего сейчас' : 'Всего на конец месяца';
+  netEl.textContent = money(endTotal); netEl.className = 'net' + (endTotal<0?' neg':'');
+  const curM = MONTHS[m-1].toLowerCase();
+  const curMonthName = {январь:'января',февраль:'февраля',март:'марта',апрель:'апреля',май:'мая',июнь:'июня',июль:'июля',август:'августа',сентябрь:'сентября',октябрь:'октября',ноябрь:'ноября',декабрь:'декабря'}[curM] || curM;
+  $('#monthNetLabel').textContent = 'Итог ' + curMonthName;
+  const mn=$('#monthNet'); mn.textContent = signed(net); mn.className = net>0?'pos':net<0?'neg':'';
 
   // chips
   const types=[['all','Все'],['income','Доходы'],['expense','Расходы'],['transfer','Переводы']];
